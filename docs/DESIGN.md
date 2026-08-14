@@ -166,6 +166,33 @@ of weeks that is enough to replace the guesses with measured values in
 decision to make from the data, not one to let the display quietly make for
 itself.
 
+## When something breaks
+
+Run `./.venv/bin/clawdtv check` — it tests each layer and names the broken one.
+
+| Symptom | Likely fix |
+|---|---|
+| `unreachable at …` | Wrong IP, or the screen lost Wi-Fi. Give it a DHCP reservation in your router so the address stops moving. |
+| Uploads succeed, screen never changes | Wrong `theme` number — `4` on the Pro, `3` on the Ultra. `check` compares it to the detected model. |
+| `not logged in` / `token expired` on screen | Open Claude Code on that account once (`/login` if asked); it refreshes its own token. |
+| Cost shows nothing | Node/`npx` missing, or ccusage's price table fetch failed (bad totals are discarded rather than shown wrong). Disable under `[cost]` if unwanted. |
+| Frame replaced by something else | Something else on your network pushes to the device too (a Home Assistant integration, say). `tools/watch_device.sh <ip>` catches it in the act. |
+
+The tick pipeline, for orientation:
+
+```
+launchd, every 5 minutes (config: tick_interval_s)
+  └─ per account:  freshest of ─ statusline file (free, live during sessions)
+                               ─ Claude Code's own cached usage
+                               ─ the OAuth usage endpoint (rate-limited, cached)
+     plus today's cost via ccusage (cached 15 min)
+  └─ render one 240×240 JPEG → push over your LAN, skipped when unchanged
+```
+
+Pushes are skipped when the frame is unchanged, floored at one per two
+minutes, and paused during quiet hours — at this cadence the flash-wear math
+on the device is decades.
+
 ## Device notes
 
 Findings that cost time to establish, verified on a SmallTV-PRO running
