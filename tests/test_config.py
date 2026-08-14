@@ -50,8 +50,13 @@ def test_a_complete_config_loads(tmp_path) -> None:
     assert len(cfg.accounts) == 1
     # Sections not present fall back to their defaults.
     assert cfg.keepalive is True
-    assert cfg.cost is True
+    assert cfg.cost is False  # dollars are opt-in
     assert cfg.notify_command == ""
+
+
+def test_cost_display_is_opt_in(tmp_path) -> None:
+    text = GOOD.replace("[device]", "[cost]\nenabled = true\n\n[device]")
+    assert config.load(write(tmp_path, text)).cost is True
 
 
 def test_shipped_config_is_valid() -> None:

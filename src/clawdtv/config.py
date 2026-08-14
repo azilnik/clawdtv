@@ -201,7 +201,8 @@ def load(path: Path | None = None) -> Config:
         quiet_end_hour=_int_between(disp, "quiet_end_hour", 0, 23, "an hour from 0 to 23"),
         stale_after_s=_int_between(disp, "stale_after_s", 1, 10**9, second),
         keepalive=_flag(raw, "keepalive", True),
-        cost=_flag(raw, "cost", True),
+        # Opt-in: the footer stays clean unless the user asks for dollars.
+        cost=_flag(raw, "cost", False),
         notify_command=notify_command,
         accounts=_parse_accounts(raw.get("accounts") or []),
     )
