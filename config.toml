@@ -1,0 +1,75 @@
+# clawdtv configuration. No secrets belong in this file — credentials are read
+# from the macOS Keychain at runtime.
+
+[device]
+# Your screen's IP address on your network, e.g. "192.168.1.50". The device
+# shows it during Wi-Fi setup; your router's client list has it too. Leaving
+# this empty is a clear error rather than a mysterious timeout.
+host = ""
+filename = "usage.jpg"
+# Picture theme is 4 on the SmallTV Pro. It is 3 on the Ultra; using the wrong
+# number uploads successfully and never displays. `clawdtv check` verifies it.
+theme = 4
+min_push_interval_s = 120
+
+[poll]
+# How often the background agent wakes. install.sh reads this into the launchd
+# plist, so this file is the only place it is set — change it and reinstall.
+tick_interval_s = 300
+# Per account. The usage endpoint rate-limits per token and 429s are sticky, so
+# stay well above the ~90s floor observed by other tools. Kept a little under
+# tick_interval_s on purpose: at exactly the tick length, launchd jitter would
+# make some ticks fall a fraction short and skip their fetch, leaving the
+# display a full extra cycle stale.
+endpoint_interval_s = 240
+rate_limit_cooldown_s = 300
+
+[display]
+# Bars turn amber at warn_at percent and coral at alert_at; a window's reset
+# time appears in the header once that window crosses warn_at.
+warn_at = 60
+alert_at = 85
+# Pushes pause overnight; the panel keeps showing the last frame.
+quiet_start_hour = 23
+quiet_end_hour = 7
+# Data older than this is called out on screen rather than shown as if current.
+stale_after_s = 900
+
+[keepalive]
+# Just before an idle account's token would lapse, run the smallest possible
+# Claude session on it so Claude Code refreshes its own token. Costs a few
+# one-word Haiku turns a day; without it, an account you are not using shows
+# "token expired" until you open Claude Code on it. See docs/DESIGN.md.
+enabled = true
+
+[cost]
+# Show today's cost per account in the footer, computed by ccusage (runs via
+# npx, cached 15 minutes). Purely informational; turn it off if you don't
+# have Node installed or don't care for the number.
+enabled = true
+
+[notify]
+# Optional: a shell command to run when the screen has been unreachable for
+# hours. The title and body are appended as two arguments. Empty means never.
+# It is a shell line, so quote a path that contains spaces:
+#   command = "/Users/you/bin/notify.sh"
+#   command = "'/Users/you/My Scripts/notify.sh'"
+command = ""
+
+# One or two accounts, each mapped to one Claude Code config dir. The panel
+# splits in half for two accounts and uses the full screen for one.
+#
+# An empty config_dir means the default (~/.claude). Any other value must be an
+# ABSOLUTE path, spelled exactly as it would be passed in CLAUDE_CONFIG_DIR —
+# the Keychain entry is looked up by a hash of that literal string.
+[[accounts]]
+label = "PERSONAL"
+config_dir = ""
+
+# To track a second account (say, work), log in to it once:
+#   CLAUDE_CONFIG_DIR=/Users/you/.claude-work claude
+# then /login, then uncomment:
+#
+# [[accounts]]
+# label = "WORK"
+# config_dir = "/Users/you/.claude-work"
