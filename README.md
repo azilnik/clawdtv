@@ -65,7 +65,7 @@ consumption meter, not a bill.
 
 <details>
 <summary>Every state the renderer can produce</summary>
-<img src="assets/states.png" width="900" alt="Contact sheet of all twenty-two display states at actual size.">
+<img src="assets/states.png" width="900" alt="Contact sheet of all twenty-four display states at actual size.">
 </details>
 
 ## Turning it off

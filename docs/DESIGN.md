@@ -12,11 +12,14 @@ whole point of the display, and it is the first thing lost if each bar is sized
 by whatever text happens to sit beside it. Reset times ride in the panel header
 rather than beside their bars, which is what makes the full-width bars possible.
 
-**One layout per account count.** Two accounts stack in half-height panels. A
-single account is not "a pair with an empty half": it gets its own geometry —
-larger numerals, taller bars, more air — chosen in `render.Geometry`. The
-single-layout hero numeral is capped at 48px by the column the tag and number
-share; past that, "100%" collides with the row tag.
+**One layout per account count.** Two accounts stack in half-height panels,
+each row a tag, number, and bar side by side. A single account is not "a pair
+with an empty half": it switches to stacked rows — a 56px numeral right-aligned
+on its own line, with the bar running the full frame width beneath it. Side by
+side, the number column caps how long a bar can be; stacking gives the bar
+nearly double the pixels, which is the whole point of having the space. Both
+layouts live in `render.Geometry`, and the bars still share one x-range within
+a frame.
 
 **Each bar is a pressure gauge, not a progress bar.** While usage is within
 pace for the window — the rate that would just reach the reset — the bar is an
