@@ -20,8 +20,7 @@ just a clock again.
 **1.** Put the screen on your Wi-Fi (the leaflet in the box shows how) and note
 its IP address.
 
-**2.** Download this repo (green **Code** button → Download ZIP), open Terminal
-in that folder, and run:
+**2.** Clone/download this repo, open Terminal in that folder, and run:
 
 ```bash
 bash tools/setup.sh
