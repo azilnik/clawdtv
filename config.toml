@@ -43,10 +43,11 @@ stale_after_s = 900
 enabled = true
 
 [cost]
-# Show today's cost per account in the footer, computed by ccusage (runs via
-# npx, cached 15 minutes). Purely informational; turn it off if you don't
-# have Node installed or don't care for the number.
-enabled = true
+# Off by default. Turn on to show today's cost per account in the footer,
+# computed by ccusage (runs via npx, cached 15 minutes) — what the day's usage
+# would have cost at API rates, a consumption meter rather than a bill.
+# Needs Node.js installed.
+enabled = false
 
 [notify]
 # Optional: a shell command to run when the screen has been unreachable for

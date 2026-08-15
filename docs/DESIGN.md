@@ -137,7 +137,10 @@ are one-word Haiku turns, and they do land in the usage numbers on screen — at
 roughly three a day per account that sits inside the rounding, but it is not
 zero.
 
-**Cost is validated, not trusted.** ccusage prices from a table it fetches at
+**Cost is opt-in, and validated rather than trusted.** The footer's dollar
+figures ship off (`[cost] enabled = false`) — they need Node and are the
+slowest thing in a tick, so they exist only for people who want them. When
+enabled: ccusage prices from a table it fetches at
 runtime; when that fetch fails it falls back to a bundled table that lags new
 model releases and prices anything missing at $0 — while still exiting 0 and
 returning a well-formed, believable total. A day that really cost $527 came
@@ -175,7 +178,7 @@ Run `./.venv/bin/clawdtv check` — it tests each layer and names the broken one
 | `unreachable at …` | Wrong IP, or the screen lost Wi-Fi. Give it a DHCP reservation in your router so the address stops moving. |
 | Uploads succeed, screen never changes | Wrong `theme` number — `4` on the Pro, `3` on the Ultra. `check` compares it to the detected model. |
 | `not logged in` / `token expired` on screen | Open Claude Code on that account once (`/login` if asked); it refreshes its own token. |
-| Cost shows nothing | Node/`npx` missing, or ccusage's price table fetch failed (bad totals are discarded rather than shown wrong). Disable under `[cost]` if unwanted. |
+| Cost shows nothing | It's opt-in — enable it under `[cost]`. If enabled: Node/`npx` missing, or ccusage's price table fetch failed (bad totals are discarded rather than shown wrong). |
 | Frame replaced by something else | Something else on your network pushes to the device too (a Home Assistant integration, say). `tools/watch_device.sh <ip>` catches it in the act. |
 
 The tick pipeline, for orientation:

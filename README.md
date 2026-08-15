@@ -52,8 +52,9 @@ split it.
 ## Reading it
 
 **5H** is the 5-hour window, **7D** the weekly cap. All bars share one scale.
-The corner shows today's usage priced at API rates — a consumption meter, not
-a bill.
+The dollar figures are optional and off by default — flip `[cost]` on in
+`config.toml` (needs Node.js) to see today's usage priced at API rates: a
+consumption meter, not a bill.
 
 | | |
 |---|---|
