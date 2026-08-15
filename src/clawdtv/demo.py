@@ -5,6 +5,9 @@ automated checks are looking at exactly the same set of cases. Every state the
 renderer can produce should appear here — a state that is not in this list is a
 state nobody has ever looked at. That includes both layouts: two stacked
 accounts and the full-height single-account frame.
+
+Costs appear only in the one state that documents them: the cost line is
+opt-in, so the default look everywhere else is the honest one.
 """
 
 from __future__ import annotations
@@ -47,27 +50,27 @@ def states() -> dict[str, list[AccountUsage]]:
     """Named states; most are two-account frames, the last few single-account."""
     return {
         "fresh / low": [
-            _account("PERSONAL", 5, 23, cost_today=4.20),
-            _account("WORK", 12, 8, cost_today=1.10),
+            _account("PERSONAL", 5, 23),
+            _account("WORK", 12, 8),
         ],
         "just under warn (59%)": [
-            _account("PERSONAL", 59, 44, cost_today=18.0),
-            _account("WORK", 59, 59, cost_today=6.5),
+            _account("PERSONAL", 59, 44),
+            _account("WORK", 59, 59),
         ],
         "warn boundary (60%)": [
-            _account("PERSONAL", 60, 61, cost_today=22.4),
-            _account("WORK", 60, 60, cost_today=7.0),
+            _account("PERSONAL", 60, 61),
+            _account("WORK", 60, 60),
         ],
         "alert boundary (85%)": [
-            _account("PERSONAL", 85, 85, cost_today=41.0),
-            _account("WORK", 86, 92, cost_today=13.25),
+            _account("PERSONAL", 85, 85),
+            _account("WORK", 86, 92),
         ],
         "maxed (100%)": [
-            _account("PERSONAL", 100, 100, cost_today=120.0),
-            _account("WORK", 100, 97, cost_today=88.5),
+            _account("PERSONAL", 100, 100),
+            _account("WORK", 100, 97),
         ],
         "zero used": [
-            _account("PERSONAL", 0, 0, cost_today=0.0),
+            _account("PERSONAL", 0, 0),
             _account("WORK", 0, 0),
         ],
         "stale data": [
@@ -89,15 +92,15 @@ def states() -> dict[str, list[AccountUsage]]:
             _account("WORK", 22, 19),
         ],
         "amber 5h shows its reset": [
-            _account("PERSONAL", 72, 40, five_reset=timedelta(minutes=42), cost_today=88.0),
-            _account("WORK", 12, 8, cost_today=1.10),
+            _account("PERSONAL", 72, 40, five_reset=timedelta(minutes=42)),
+            _account("WORK", 12, 8),
         ],
         "high 5h shows its reset": [
-            _account("PERSONAL", 88, 40, five_reset=timedelta(minutes=42), cost_today=241.0),
-            _account("WORK", 12, 8, cost_today=1.10),
+            _account("PERSONAL", 88, 40, five_reset=timedelta(minutes=42)),
+            _account("WORK", 12, 8),
         ],
         "high weekly shows its reset": [
-            _account("PERSONAL", 30, 91, seven_reset=timedelta(days=1, hours=6), cost_today=60.0),
+            _account("PERSONAL", 30, 91, seven_reset=timedelta(days=1, hours=6)),
             _account("WORK", 22, 19),
         ],
         "both windows high": [
@@ -107,20 +110,23 @@ def states() -> dict[str, list[AccountUsage]]:
                 84,
                 five_reset=timedelta(minutes=55),
                 seven_reset=timedelta(hours=30),
-                cost_today=95.0,
             ),
             _account("WORK", 40, 22),
         ],
         "weekly urgent": [
-            _account("PERSONAL", 30, 91, cost_today=241.0),
-            _account("WORK", 30, 12, seven_reset=timedelta(days=5), cost_today=8.0),
+            _account("PERSONAL", 30, 91),
+            _account("WORK", 30, 12, seven_reset=timedelta(days=5)),
         ],
         "long label crowds header": [
-            _account("PERSONAL-WORK", 30, 88, cost_today=60.0),
+            _account("PERSONAL-WORK", 30, 88),
             _account("WORK", 44, 12),
         ],
+        "optional cost line on": [
+            _account("PERSONAL", 42, 61, cost_today=241.0),
+            _account("WORK", 12, 8, cost_today=8.50),
+        ],
         "not signed in": [
-            _account("PERSONAL", 31, 27, cost_today=9.0),
+            _account("PERSONAL", 31, 27),
             AccountUsage(label="WORK", error="not logged in"),
         ],
         "token expired": [
@@ -133,10 +139,13 @@ def states() -> dict[str, list[AccountUsage]]:
         ],
         # -- single-account layout -------------------------------------------
         "single / comfortable": [
-            _account("PERSONAL", 34, 18, cost_today=12.0),
+            _account("PERSONAL", 34, 18),
         ],
         "single / over pace, reset near": [
-            _account("PERSONAL", 78, 88, five_reset=timedelta(minutes=48), cost_today=241.0),
+            _account("PERSONAL", 78, 88, five_reset=timedelta(minutes=48)),
+        ],
+        "single / with cost line": [
+            _account("PERSONAL", 52, 30, cost_today=88.0),
         ],
         "single / unknown": [
             _account("PERSONAL", None, None),

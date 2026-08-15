@@ -39,7 +39,8 @@ WALKTHROUGH = {
 
 def hero(cfg) -> Image.Image:
     """One panel over pace and one under, with a reset close enough to be worth
-    saying — every distinct behavior the display has, in one believable frame."""
+    saying — every distinct behavior the display has, in one believable frame.
+    No cost line: the dollars are opt-in, so the default look is the honest one."""
     now = demo.NOW
     usages = [
         AccountUsage(
@@ -47,14 +48,12 @@ def hero(cfg) -> Image.Image:
             five_hour=Window(78, now + timedelta(minutes=48)),
             seven_day=Window(88, now + timedelta(days=2)),
             observed_at=now,
-            cost_today=241.0,
         ),
         AccountUsage(
             label="WORK",
             five_hour=Window(26, now + timedelta(hours=3, minutes=20)),
             seven_day=Window(4, now + timedelta(days=5)),
             observed_at=now,
-            cost_today=8.5,
         ),
     ]
     return render.render(usages, cfg, now)

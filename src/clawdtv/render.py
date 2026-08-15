@@ -44,13 +44,19 @@ TAG_X = MARGIN
 BAR_RIGHT = W - MARGIN
 
 
+# Vertical gap between a stacked row's text line and its bar.
+STACK_BAR_GAP = 8
+
+
 @dataclass(frozen=True)
 class Geometry:
     """Pixel layout for the account panels, chosen by how many share the frame.
 
-    Two accounts stack in two half-height panels. A single account gets the
-    whole screen, which buys larger numerals, taller bars, and more air — the
-    same rows, just no longer sized to leave room for a neighbor.
+    Two accounts stack in two half-height panels, each row a tag, a number, and
+    a bar side by side. A single account gets the whole screen and switches to
+    a stacked row: the number rides its own line and the bar runs the full
+    frame width beneath it — nearly double the bar resolution, which is the
+    point of having the space.
     """
 
     panel_ys: tuple[int, ...]
@@ -60,13 +66,25 @@ class Geometry:
     secondary_size: int
     hero_bar_h: int
     secondary_bar_h: int
-    number_right: int  # right edge shared by both numbers; bars start after it
+    number_right: int  # right edge shared by both numbers
+    stacked: bool = False  # bar below the text line rather than beside it
 
     @property
-    def bar_x(self) -> int:
-        """Bars start one standard gutter after the number column — derived, so
-        widening the column cannot silently leave the bars overlapping it."""
-        return self.number_right + MARGIN
+    def bar_left(self) -> int:
+        """Stacked bars span the full width; side-by-side bars start one
+        standard gutter after the number column — derived, so widening the
+        column cannot silently leave the bars overlapping it."""
+        return MARGIN if self.stacked else self.number_right + MARGIN
+
+    def bar_top(self, panel_y: int, hero: bool) -> int:
+        """One formula shared with the contrast tests, so the pixels they
+        sample are the pixels the renderer painted."""
+        row_y = panel_y + (self.hero_dy if hero else self.secondary_dy)
+        size = self.hero_size if hero else self.secondary_size
+        if self.stacked:
+            return row_y + size + STACK_BAR_GAP
+        bar_h = self.hero_bar_h if hero else self.secondary_bar_h
+        return row_y + (size - bar_h) // 2 + 3
 
 
 TWO_UP = Geometry(
@@ -80,18 +98,18 @@ TWO_UP = Geometry(
     number_right=100,
 )
 
-# The hero numeral is capped at 48px by the column the tag and number share:
-# "100%" in condensed bold has to clear the tag with the same right edge every
-# smaller value uses.
+# The single-account frame: label, then each window as a full-width band —
+# big right-aligned numeral over a margin-to-margin bar.
 ONE_UP = Geometry(
     panel_ys=(8,),
-    hero_dy=40,
-    secondary_dy=132,
-    hero_size=48,
-    secondary_size=30,
-    hero_bar_h=24,
-    secondary_bar_h=16,
-    number_right=120,
+    hero_dy=36,
+    secondary_dy=140,
+    hero_size=56,
+    secondary_size=34,
+    hero_bar_h=32,
+    secondary_bar_h=20,
+    number_right=W - MARGIN,
+    stacked=True,
 )
 
 
@@ -308,12 +326,19 @@ def _render_bar(
 
 
 def _draw_row(
-    image: Image.Image, draw: ImageDraw.ImageDraw, y: int, row: Row, config: Config, geo: Geometry
+    image: Image.Image,
+    draw: ImageDraw.ImageDraw,
+    panel_y: int,
+    row: Row,
+    config: Config,
+    geo: Geometry,
+    hero: bool,
 ) -> None:
     color = theme.level_color(row.percent, config.warn_at, config.alert_at)
     number_font = theme.font(row.size, theme.WEIGHT_NUMBER)
     small = theme.font(theme.SIZE_SMALL, theme.WEIGHT_SMALL)
 
+    y = panel_y + (geo.hero_dy if hero else geo.secondary_dy)
     baseline = y + row.size
     draw.text((TAG_X, baseline), row.tag, font=small, fill=theme.MUTED, anchor="ls")
 
@@ -332,9 +357,8 @@ def _draw_row(
             (geo.number_right - unit_w + 1, baseline), unit, font=small, fill=theme.MUTED, anchor="ls"
         )
 
-    bar_y = y + (row.size - row.bar_h) // 2 + 3
-    bar = _render_bar(BAR_RIGHT - geo.bar_x, row.bar_h, row.percent, color, row.pace)
-    image.paste(bar, (geo.bar_x, bar_y))
+    bar = _render_bar(BAR_RIGHT - geo.bar_left, row.bar_h, row.percent, color, row.pace)
+    image.paste(bar, (geo.bar_left, geo.bar_top(panel_y, hero)))
 
 
 def _draw_panel(
@@ -367,7 +391,7 @@ def _draw_panel(
     _draw_row(
         image,
         draw,
-        y + geo.hero_dy,
+        y,
         Row(
             "5H",
             None if five.reset_passed(now) else five.percent,
@@ -377,11 +401,12 @@ def _draw_panel(
         ),
         config,
         geo,
+        hero=True,
     )
     _draw_row(
         image,
         draw,
-        y + geo.secondary_dy,
+        y,
         Row(
             "7D",
             None if seven.reset_passed(now) else seven.percent,
@@ -391,6 +416,7 @@ def _draw_panel(
         ),
         config,
         geo,
+        hero=False,
     )
 
 

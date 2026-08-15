@@ -96,8 +96,8 @@ def test_zero_or_three_accounts_is_a_bug() -> None:
 def test_single_account_cost_carries_no_initial() -> None:
     """'P $12' disambiguates between two accounts; alone it is just noise."""
     cfg = config.load()
-    account = demo.states()["fresh / low"][0]  # cost_today set
-    pair = demo.states()["fresh / low"]
+    account = demo.states()["optional cost line on"][0]
+    pair = demo.states()["optional cost line on"]
     assert account.cost_today is not None
     # Rendered pixels differ in the footer's right corner; compare crops.
     single = render.render([account], cfg, demo.NOW).crop((120, render.FOOTER_Y, 240, 240))

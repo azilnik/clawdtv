@@ -106,10 +106,8 @@ def test_text_survives_compression(name: str, color, size: int, weight: str) -> 
     assert ratio >= TEXT_MIN, f"{name} after JPEG is {ratio:.2f}:1, needs {TEXT_MIN}:1"
 
 
-def _hero_bar_top(geo: render.Geometry) -> int:
-    """Top edge of the first panel's hero bar, derived rather than guessed."""
-    top = geo.panel_ys[0] + geo.hero_dy
-    return top + (geo.hero_size - geo.hero_bar_h) // 2 + 3
+# Bar coordinates come from Geometry.bar_top/bar_left — the renderer's own
+# formula — so the pixels sampled here are the pixels it painted.
 
 
 @pytest.mark.parametrize(
@@ -126,9 +124,9 @@ def test_bar_fill_is_distinguishable_from_track_after_compression(state: str, ex
     usages = demo.states()[state]
     geo = render.geometry(len(usages))
     frame = _jpeg_roundtrip(render.render(usages, cfg, demo.NOW))
-    row = _hero_bar_top(geo) + geo.hero_bar_h // 2
+    row = geo.bar_top(geo.panel_ys[0], hero=True) + geo.hero_bar_h // 2
 
-    fill = frame.getpixel((geo.bar_x + 12, row))
+    fill = frame.getpixel((geo.bar_left + 12, row))
     track = frame.getpixel((render.BAR_RIGHT - 12, row))
     ratio = theme.contrast(fill, track)
     assert ratio >= NON_TEXT_MIN, f"{expected} fill vs track after JPEG is {ratio:.2f}:1"
@@ -145,7 +143,7 @@ def test_track_edge_survives_compression() -> None:
     frame = _jpeg_roundtrip(render.render(demo.states()["zero used"], cfg, demo.NOW))
 
     column = render.BAR_RIGHT - 24
-    bar_top = _hero_bar_top(geo)
+    bar_top = geo.bar_top(geo.panel_ys[0], hero=True)
     edge = max(
         (frame.getpixel((column, y)) for y in range(bar_top - 2, bar_top + 4)),
         key=theme.luminance,
