@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.clawdtv.agent</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PREFIX__/.venv/bin/clawdtv</string>
+    <string>run</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__PREFIX__</string>
+
+  <!-- A tick is a short-lived process rather than a loop, so there is nothing to
+       wedge, and waking from sleep produces a tick without special handling.
+       Substituted by install.sh from tick_interval_s in config.toml. -->
+  <key>StartInterval</key>
+  <integer>__INTERVAL__</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- npx, for the ccusage cost lookup. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>__HOME__/.local/state/clawdtv/clawdtv.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/.local/state/clawdtv/clawdtv.log</string>
+
+  <!-- Deliberately NOT ProcessType=Background / LowPriorityIO. Those throttle the
+       job hard enough that ccusage's runtime pricing fetch fails, and ccusage
+       responds by silently falling back to a bundled table that has no rate for
+       the newest models — turning a $525 day into a plausible-looking $45. -->
+  <key>Nice</key>
+  <integer>5</integer>
+</dict>
+</plist>
