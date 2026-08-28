@@ -20,6 +20,7 @@ from . import config as config_mod
 from . import cost as cost_mod
 from . import creds as creds_mod
 from . import history as history_mod
+from . import keepalive
 from . import render as render_mod
 from . import theme
 from .config import STATE_DIR
@@ -83,6 +84,8 @@ def collect(cfg: config_mod.Config, with_cost: bool = True):
         if with_cost and cfg.cost and usage.error is None:
             usage.cost_today = cost_mod.today(account)
         usages.append(usage)
+    for line in poller.keepalives:
+        print(line)
     poller.save_state()
     history_mod.record(usages)
     return usages
@@ -228,7 +231,9 @@ def cmd_check(args) -> int:
             failures += 1
         print(f"  {scope} {label}: {email}, plan {credentials.plan_label}")
         if credentials.expired:
-            print(f"  warn {label}: access token expired; open Claude Code to refresh")
+            print(f"  warn {label}: access token expired; the keepalive runs on the next tick")
+        if (last := keepalive.last_result(label)) is not None:
+            print(f"  ok   {label}: last keepalive {last}")
 
     print("usage data")
     for usage in collect(cfg, with_cost=False):

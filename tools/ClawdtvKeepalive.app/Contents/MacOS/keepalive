@@ -1,0 +1,53 @@
+#!/bin/bash
+# Runs the smallest real Claude Code session on one account, so Claude Code
+# refreshes that account's own token. clawdtv never touches the token itself.
+#
+# This exists as an app bundle, launched with `open`, for one reason: the
+# launchd agent that decides a refresh is due cannot make one itself. Node's
+# outbound connect() fails with EBADF in that exec context, so `claude` hangs
+# there until it times out — measured 0 successes across 46 attempts. `open`
+# hands the work to LaunchServices, which spawns this in the Aqua session,
+# where node's network works. Verified end to end 2026-08-27: agent -> open ->
+# this script -> a real authenticated response in 10s.
+#
+# Argument 1 is the account's CLAUDE_CONFIG_DIR ("" for the default), argument 2
+# its display label. Everything is best effort: a keepalive that fails costs a
+# stale panel and a logged line, never a crash.
+set -uo pipefail
+
+CONFIG_DIR="${1-}"
+LABEL="${2-account}"
+LOG="$HOME/.local/state/clawdtv/keepalive.log"
+mkdir -p "$(dirname "$LOG")"
+
+CLAUDE=/opt/homebrew/bin/claude
+[ -x "$CLAUDE" ] || CLAUDE=$(command -v claude 2>/dev/null)
+if [ -z "$CLAUDE" ]; then
+  echo "$(date '+%F %T') $LABEL FAILED claude not found" >> "$LOG"
+  exit 1
+fi
+
+started=$(date +%s)
+# The cheapest session that still authenticates: one token in, Haiku, no MCP
+# servers booted. A rate-limited account still refreshes — auth happens before
+# the quota check — so a session limit is a success for our purposes.
+output=$(CLAUDE_CONFIG_DIR="$CONFIG_DIR" "$CLAUDE" -p ok \
+           --model claude-haiku-4-5-20251001 \
+           --strict-mcp-config --mcp-config '{"mcpServers":{}}' 2>&1 | tail -1)
+status=$?
+elapsed=$(( $(date +%s) - started ))
+
+# A quota refusal is a success here, and reads like a failure if left unlabelled.
+# Refreshing happens at authentication, before any limit is consulted: the
+# session that gets told "you've hit your session limit" has already renewed the
+# token, which is the only thing this was started for. The signal that something
+# is actually wrong is a long elapsed time — the EBADF hang runs to timeout.
+case "$output" in
+  *"session limit"*|*"usage limit"*|*"rate limit"*|*"limit reached"*)
+    verdict="refreshed (quota reached, which still authenticates)" ;;
+  *)
+    [ "$status" -eq 0 ] && verdict="refreshed" || verdict="FAILED exit=$status" ;;
+esac
+
+echo "$(date '+%F %T') $LABEL $verdict ${elapsed}s ${output:0:100}" >> "$LOG"
+

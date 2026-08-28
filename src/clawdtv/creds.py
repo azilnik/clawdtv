@@ -41,6 +41,10 @@ class Credentials:
     subscription_type: str | None
     rate_limit_tier: str | None
     scopes: list[str]
+    # Whether Claude Code could mint a fresh access token if a session ran now.
+    # The refresh token itself deliberately never leaves the blob.
+    has_refresh_token: bool
+    refresh_expires_at: datetime | None
 
     @property
     def expired(self) -> bool:
@@ -111,19 +115,20 @@ def load(account: Account) -> Credentials:
     if not oauth or not oauth.get("accessToken"):
         raise CredentialsError("not logged in")
 
-    expires_raw = oauth.get("expiresAt")
-    expires_at = (
-        datetime.fromtimestamp(expires_raw / 1000, tz=UTC)
-        if isinstance(expires_raw, (int, float))
-        else None
-    )
+    def stamp(value) -> datetime | None:
+        """Logged-out blobs carry zeroed stamps, which are absence, not 1970."""
+        if not isinstance(value, (int, float)) or value <= 0:
+            return None
+        return datetime.fromtimestamp(value / 1000, tz=UTC)
 
     return Credentials(
         access_token=oauth["accessToken"],
-        expires_at=expires_at,
+        expires_at=stamp(oauth.get("expiresAt")),
         subscription_type=oauth.get("subscriptionType"),
         rate_limit_tier=oauth.get("rateLimitTier"),
         scopes=list(oauth.get("scopes") or []),
+        has_refresh_token=bool(oauth.get("refreshToken")),
+        refresh_expires_at=stamp(oauth.get("refreshTokenExpiresAt")),
     )
 
 

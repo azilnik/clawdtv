@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- An app bundle purely so `open` will launch it. LaunchServices spawns this in
+     the Aqua session, which is the entire point: the launchd agent that calls
+     `open` has no working outbound network for node, and this does. See the
+     keepalive design note in the README. -->
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>ClawdtvKeepalive</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.arizilnik.clawdtv.keepalive</string>
+  <key>CFBundleExecutable</key>
+  <string>keepalive</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <!-- No Dock icon, no menu bar, no window stealing focus mid-sentence. -->
+  <key>LSBackgroundOnly</key>
+  <true/>
+</dict>
+</plist>

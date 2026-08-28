@@ -36,10 +36,14 @@ quiet_end_hour = 7
 stale_after_s = 900
 
 [keepalive]
-# Just before an idle account's token would lapse, run the smallest possible
+# Around the time an idle account's token would lapse, run the smallest possible
 # Claude session on it so Claude Code refreshes its own token. Costs a few
 # one-word Haiku turns a day; without it, an account you are not using shows
-# "token expired" until you open Claude Code on it. See docs/DESIGN.md.
+# "token expired" until you open Claude Code on it.
+#
+# The session is launched via tools/ClawdtvKeepalive.app rather than run
+# directly — node cannot open a network connection from a launchd agent, so the
+# work has to be handed to LaunchServices. See docs/DESIGN.md.
 enabled = true
 
 [cost]

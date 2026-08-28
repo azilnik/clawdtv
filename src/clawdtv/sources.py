@@ -234,6 +234,10 @@ class Poller:
         self._last_fetch: dict[str, datetime] = {}
         self._cooldown_until: dict[str, datetime] = {}
         self._last_good: dict[str, tuple[Window, Window, datetime]] = {}
+        # One line per keepalive session started, for the caller to log. This
+        # is the only thing a tick does that reaches outside itself, so it
+        # says so every time rather than only when it fails.
+        self.keepalives: list[str] = []
         self._load_state()
 
     def _load_state(self) -> None:
@@ -297,11 +301,13 @@ class Poller:
             usage.error = str(exc)
             return usage
 
-        if self.config.keepalive and keepalive.due(credentials, now) and keepalive.renew(account):
-            try:
-                credentials = creds_mod.load(account)
-            except CredentialsError:
-                pass  # Keep the still-valid token we already hold.
+        # The session runs elsewhere and finishes after this tick, so there is
+        # no point re-reading the token here — this tick still reports the old
+        # one and the next sees the refreshed one. Waiting for it would put the
+        # tick back to blocking on node, which is what the app bundle avoids.
+        if self.config.keepalive and keepalive.due(credentials, now):
+            if (status := keepalive.renew(account)) is not None:
+                self.keepalives.append(status)
 
         usage.plan = credentials.plan_label
 

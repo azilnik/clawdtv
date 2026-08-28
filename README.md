@@ -82,7 +82,10 @@ bash tools/kill.sh --purge  # remove everything, hand the device back its clock
 - Everything runs locally. Your Claude token is read from the Keychain, used
   for one usage lookup to Anthropic, never written or logged.
 - An idle account's token is kept alive with a few one-word Haiku turns a day
-  (pennies); turn that off under `[keepalive]` in `config.toml`.
+  (pennies), launched through a small helper app because a launchd agent cannot
+  make the network call itself; turn it off under `[keepalive]` in
+  `config.toml`. Outcomes are logged to `~/.local/state/clawdtv/keepalive.log`
+  and summarised by `clawdtv check`.
 - The usage endpoint is unofficial and can drift with Claude Code updates —
   `clawdtv check` tells you which part broke.
 

@@ -129,16 +129,51 @@ Claude Code refresh its own copy — the same cure as opening it by hand, just
 early. (`claude auth status` is not enough; it reads the stored token without
 exercising it.)
 
-**The keepalive keys off expiry and nothing else.** Each tick is a separate
-process, so any memory of past attempts would have to live on disk. Reading the
-trigger straight off the token avoids that entirely: a success moves expiry
-hours out and silences it, a failure retries on the next tick, and once the
-token has actually lapsed it stops trying — renewing there would work, but it
-would then retry every five minutes for as long as the account stayed logged
-out. Past that point the panel says expired and waits. Those keepalive sessions
-are one-word Haiku turns, and they do land in the usage numbers on screen — at
-roughly three a day per account that sits inside the rounding, but it is not
-zero.
+**The keepalive session cannot run from the tick, and that shapes everything
+about it.** The obvious implementation calls `claude` from the launchd agent. It
+does not work: a `claude` session is Node, and Node's outbound `connect()` fails
+with `EBADF` in the launchd-agent exec context, so every attempt hangs until
+timeout. On the development machine that was 0 successes across 46 tries, while
+the same command ran in ~3.7s from a terminal. It is not the fd limit, the
+session type, stdio, or the environment; all were ruled out with one-shot
+launchd repros. Worse, it fails *silently* — a tick that hangs and renews
+nothing looks much like a tick with nothing to do.
+
+What works is not running the session from the agent at all. `open` hands the
+request to LaunchServices, which spawns the app in the Aqua session regardless
+of who asked, and Node's network works there. That is the only reason
+`tools/ClawdtvKeepalive.app` exists: it is a thing `open` will launch. Verified
+end to end — launchd agent, `open`, a real authenticated response in ten
+seconds, in the exact context that produced those 46 timeouts. If your machine
+runs `claude` from a launchd agent without trouble, this indirection costs one
+extra process and nothing else.
+
+**Two consequences.** `open` is asynchronous, so the tick that starts a session
+still reports the old token and the next one sees the refreshed token; the
+session's outcome lands in `keepalive.log`, which is where `clawdtv check` reads
+it from and the only place it is visible. And a ten-minute debounce is
+load-bearing rather than tidy: without it, every tick inside the margin starts
+another session before the first has finished, spending several sessions of real
+quota to do one job.
+
+**A quota refusal is a success.** Refreshing happens at authentication, before
+any limit is consulted, so a session told "you've hit your session limit" has
+already renewed the token. The log labels that case, because an unlabelled
+`exit=1` reads like a failure. The signal that something is genuinely wrong is a
+long elapsed time — the `EBADF` hang runs to timeout.
+
+**The trigger is the token's own expiry**, so nothing needs remembering between
+ticks beyond the debounce. It fires after expiry as well as before: an earlier
+version stopped at the moment of lapse, reasoning that retrying forever was the
+worse failure, but that left a machine which slept through its own margin
+stranded until somebody noticed — once for 65 hours. The debounce bounds the
+retry rate, and an account whose refresh token is itself dead is excluded
+outright, since Claude Code could not refresh either and the session would burn
+quota to change nothing. That case needs a human, and the panel says so.
+
+Those keepalive sessions are one-word Haiku turns, and they do land in the usage
+numbers on screen — at roughly three a day per account that sits inside the
+rounding, but it is not zero.
 
 **Cost is opt-in, and validated rather than trusted.** The footer's dollar
 figures ship off (`[cost] enabled = false`) — they need Node and are the
